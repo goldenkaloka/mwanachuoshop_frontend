@@ -14,6 +14,11 @@ export const authApiSlice = apiSlice.injectEndpoints({
           if (response.refresh) {
             localStorage.setItem('refreshToken', response.refresh);
           }
+          return {
+            user: response.user,
+            access: response.access,
+            refresh: response.refresh,
+          };
         }
         return response;
       },
@@ -26,34 +31,13 @@ export const authApiSlice = apiSlice.injectEndpoints({
         method: 'POST',
         body: userData,
       }),
-      transformErrorResponse: (response) => {
-        return {
-          status: response.status,
-          data: response.data?.detail || 
-               (typeof response.data === 'object' 
-                ? Object.entries(response.data).map(([k,v]) => `${k}: ${v}`).join('\n') 
-                : 'Registration failed')
-        };
-      },
     }),
 
     getCurrentUser: builder.query({
       query: () => '/users/auth/user/',
       providesTags: ['User'],
-    }),
-
-    refreshToken: builder.mutation({
-      query: () => ({
-        url: '/users/auth/token/refresh/',
-        method: 'POST',
-        body: { refresh: localStorage.getItem('refreshToken') },
-      }),
-      transformResponse: (response) => {
-        if (response.access) {
-          localStorage.setItem('accessToken', response.access);
-        }
-        return response;
-      },
+      // Retry with fresh token if 401 occurs
+      extraOptions: { maxRetries: 1 },
     }),
 
     logout: builder.mutation({
@@ -61,11 +45,6 @@ export const authApiSlice = apiSlice.injectEndpoints({
         url: '/users/auth/logout/',
         method: 'POST',
       }),
-      transformResponse: (response) => {
-        localStorage.removeItem('accessToken');
-        localStorage.removeItem('refreshToken');
-        return response;
-      },
       invalidatesTags: ['User'],
     }),
 
@@ -92,7 +71,6 @@ export const {
   useLoginMutation,
   useRegisterMutation,
   useGetCurrentUserQuery,
-  useRefreshTokenMutation,
   useLogoutMutation,
   useUpdateProfileMutation,
   useChangePasswordMutation,

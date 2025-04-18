@@ -12,7 +12,8 @@ import {
   Slider,
   Button,
   Divider,
-  Chip
+  Chip,
+  CircularProgress
 } from '@mui/material';
 import { Search as SearchIcon, ExpandMore as ExpandMoreIcon, Close as CloseIcon } from '@mui/icons-material';
 import { useGetFilterOptionsQuery } from '../../features/products/productsApiSlice';
@@ -23,7 +24,6 @@ const SearchAndFilter = ({
   selectedBrands,
   priceRange,
   onSearchChange,
-  CircularProgress,
   onCategoryToggle,
   onBrandToggle,
   onPriceChange,
@@ -147,8 +147,8 @@ const SearchAndFilter = ({
       )}
       
       {(selectedCategories.length > 0 || selectedBrands.length > 0 || 
-        priceRange[0] > filterOptions?.priceRange?.min || 
-        priceRange[1] < filterOptions?.priceRange?.max) && (
+        priceRange[0] > (filterOptions?.priceRange?.min || 0) || 
+        priceRange[1] < (filterOptions?.priceRange?.max || 1000)) && (
         <Box sx={{ mt: 2 }}>
           <Divider sx={{ mb: 2 }} />
           <Typography variant="subtitle2" sx={{ mb: 1 }}>Active Filters:</Typography>
@@ -173,8 +173,8 @@ const SearchAndFilter = ({
                 />
               ) : null;
             })}
-            {(priceRange[0] > filterOptions?.priceRange?.min || 
-              priceRange[1] < filterOptions?.priceRange?.max) && (
+            {(priceRange[0] > (filterOptions?.priceRange?.min || 0) || 
+              priceRange[1] < (filterOptions?.priceRange?.max || 1000)) && (
               <Chip
                 label={`Price: $${priceRange[0]} - $${priceRange[1]}`}
                 onDelete={() => onPriceChange([

@@ -1,5 +1,3 @@
-// pages/Products/ProductDetailPage.jsx
-
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useSnackbar } from 'notistack';
@@ -55,9 +53,16 @@ const ProductDetailPage = () => {
     return (
       <Box display="flex" justifyContent="center" mt={4}>
         <Typography color="error">Failed to load product</Typography>
+        <Button onClick={() => navigate(-1)} sx={{ ml: 2 }}>Go Back</Button>
       </Box>
     );
   }
+
+  // Safely get owner information
+  const ownerName = product.owner_profile?.name || 'Unknown';
+  const ownerEmail = product.owner_profile?.email || '';
+  const ownerImage = product.owner_profile?.image;
+  const shopName = product.shop?.name;
 
   return (
     <Box sx={{ p: 3 }}>
@@ -87,7 +92,7 @@ const ProductDetailPage = () => {
               </Box>
               
               <Typography variant="body1" paragraph sx={{ mb: 3 }}>
-                {product.description}
+                {product.description || 'No description available'}
               </Typography>
               
               <Divider sx={{ my: 2 }} />
@@ -95,20 +100,20 @@ const ProductDetailPage = () => {
               <Grid container spacing={2} sx={{ mb: 2 }}>
                 <Grid item xs={6}>
                   <Typography variant="subtitle2">Brand</Typography>
-                  <Typography>{product.brand}</Typography>
+                  <Typography>{product.brand || '-'}</Typography>
                 </Grid>
                 <Grid item xs={6}>
                   <Typography variant="subtitle2">Category</Typography>
-                  <Typography>{product.category}</Typography>
+                  <Typography>{product.category || '-'}</Typography>
                 </Grid>
                 <Grid item xs={6}>
                   <Typography variant="subtitle2">Type</Typography>
-                  <Typography>{product.type}</Typography>
+                  <Typography>{product.type || '-'}</Typography>
                 </Grid>
                 <Grid item xs={6}>
                   <Typography variant="subtitle2">Created</Typography>
                   <Typography>
-                    {new Date(product.created_at).toLocaleDateString()}
+                    {product.created_at ? new Date(product.created_at).toLocaleDateString() : '-'}
                   </Typography>
                 </Grid>
               </Grid>
@@ -121,65 +126,76 @@ const ProductDetailPage = () => {
                 Product Variants
               </Typography>
               
-              {product.product_lines.map((line, index) => (
-                <Box key={line.id} mb={3}>
-                  <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
-                    <Typography variant="subtitle1">
-                      Variant #{index + 1}
-                    </Typography>
-                    <Chip 
-                      label={line.is_active ? 'Active' : 'Inactive'} 
-                      size="small" 
-                      color={line.is_active ? 'success' : 'default'}
-                    />
-                  </Box>
-                  
-                  <Grid container spacing={2} sx={{ mb: 1 }}>
-                    <Grid item xs={4}>
-                      <Typography variant="subtitle2">Price</Typography>
-                      <Typography>
-                        {line.price} {line.sale_price && (
-                          <span style={{ textDecoration: 'line-through', color: 'red', marginLeft: '8px' }}>
-                            {line.sale_price}
-                          </span>
-                        )}
+              {product.product_lines?.length > 0 ? (
+                product.product_lines.map((line, index) => (
+                  <Box key={line.id || index} mb={3}>
+                    <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
+                      <Typography variant="subtitle1">
+                        Variant #{index + 1}
                       </Typography>
+                      <Chip 
+                        label={line.is_active ? 'Active' : 'Inactive'} 
+                        size="small" 
+                        color={line.is_active ? 'success' : 'default'}
+                      />
+                    </Box>
+                    
+                    <Grid container spacing={2} sx={{ mb: 1 }}>
+                      <Grid item xs={4}>
+                        <Typography variant="subtitle2">Price</Typography>
+                        <Typography>
+                          {line.price || '0'} 
+                          {line.sale_price && (
+                            <span style={{ textDecoration: 'line-through', color: 'red', marginLeft: '8px' }}>
+                              {line.sale_price}
+                            </span>
+                          )}
+                        </Typography>
+                      </Grid>
+                      <Grid item xs={4}>
+                        <Typography variant="subtitle2">SKU</Typography>
+                        <Typography>{line.sku || '-'}</Typography>
+                      </Grid>
+                      <Grid item xs={4}>
+                        <Typography variant="subtitle2">Stock</Typography>
+                        <Typography>{line.stock_qty || '0'}</Typography>
+                      </Grid>
                     </Grid>
-                    <Grid item xs={4}>
-                      <Typography variant="subtitle2">SKU</Typography>
-                      <Typography>{line.sku}</Typography>
-                    </Grid>
-                    <Grid item xs={4}>
-                      <Typography variant="subtitle2">Stock</Typography>
-                      <Typography>{line.stock_qty}</Typography>
-                    </Grid>
-                  </Grid>
-                  
-                  {line.attribute_values.length > 0 && (
-                    <Box sx={{ mb: 1 }}>
-                      <Typography variant="subtitle2">Attributes</Typography>
-                      <Box display="flex" gap={1} flexWrap="wrap">
-                        {line.attribute_values.map(attr => (
-                          <Chip 
-                            key={attr.id}
-                            label={`${attr.attribute}: ${attr.value}`}
-                            size="small"
-                          />
-                        ))}
+                    
+                    {line.attribute_values?.length > 0 && (
+                      <Box sx={{ mb: 1 }}>
+                        <Typography variant="subtitle2">Attributes</Typography>
+                        <Box display="flex" gap={1} flexWrap="wrap">
+                          {line.attribute_values.map(attr => (
+                            <Chip 
+                              key={attr.id}
+                              label={`${attr.attribute || ''}: ${attr.value || ''}`}
+                              size="small"
+                            />
+                          ))}
+                        </Box>
                       </Box>
-                    </Box>
-                  )}
-                  
-                  {line.images.length > 0 && (
-                    <Box>
-                      <Typography variant="subtitle2" gutterBottom>
-                        Images
+                    )}
+                    
+                    {line.images?.length > 0 ? (
+                      <Box>
+                        <Typography variant="subtitle2" gutterBottom>
+                          Images
+                        </Typography>
+                        <ProductImageGallery images={line.images} />
+                      </Box>
+                    ) : (
+                      <Typography variant="body2" color="text.secondary">
+                        No images available
                       </Typography>
-                      <ProductImageGallery images={line.images} />
-                    </Box>
-                  )}
-                </Box>
-              ))}
+                    )}
+                  </Box>
+                ))
+              ) : (
+                <Typography variant="body2" color="text.secondary">
+                  No variants available
+                </Typography>
+              )}
             </CardContent>
           </Card>
         </Grid>
@@ -193,21 +209,25 @@ const ProductDetailPage = () => {
               
               <Box display="flex" alignItems="center" mb={2}>
                 <Avatar 
-                  src={product.owner_profile.image} 
+                  src={ownerImage} 
                   sx={{ width: 56, height: 56, mr: 2 }}
-                />
+                >
+                  {ownerName.charAt(0)}
+                </Avatar>
                 <Box>
-                  <Typography>{product.owner_profile.name}</Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    {product.owner_profile.email}
-                  </Typography>
+                  <Typography>{ownerName}</Typography>
+                  {ownerEmail && (
+                    <Typography variant="body2" color="text.secondary">
+                      {ownerEmail}
+                    </Typography>
+                  )}
                 </Box>
               </Box>
               
-              {product.shop && (
+              {shopName && (
                 <Box mb={2}>
                   <Typography variant="subtitle2">Shop</Typography>
-                  <Typography>{product.shop.name}</Typography>
+                  <Typography>{shopName}</Typography>
                 </Box>
               )}
             </CardContent>

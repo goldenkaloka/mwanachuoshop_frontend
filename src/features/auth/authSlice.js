@@ -4,7 +4,7 @@ import { authApiSlice } from './authApiSlice';
 const initialState = {
   user: null,
   token: localStorage.getItem('accessToken') || null,
-  isAuthenticated: false,
+  isAuthenticated: !!localStorage.getItem('accessToken'),
   isLoading: false,
   error: null,
 };
@@ -14,15 +14,20 @@ const authSlice = createSlice({
   initialState,
   reducers: {
     logout: (state) => {
+      localStorage.removeItem('accessToken');
+      localStorage.removeItem('refreshToken');
       state.user = null;
       state.token = null;
       state.isAuthenticated = false;
+      state.error = null;
     },
     setCredentials: (state, action) => {
-      const { user, token } = action.payload;
+      const { user, access } = action.payload;
+      localStorage.setItem('accessToken', access);
       state.user = user;
-      state.token = token;
+      state.token = access;
       state.isAuthenticated = true;
+      state.error = null;
     },
   },
   extraReducers: (builder) => {
@@ -31,12 +36,14 @@ const authSlice = createSlice({
         authApiSlice.endpoints.login.matchPending,
         (state) => {
           state.isLoading = true;
+          state.error = null;
         }
       )
       .addMatcher(
         authApiSlice.endpoints.getCurrentUser.matchPending,
         (state) => {
           state.isLoading = true;
+          state.error = null;
         }
       )
       .addMatcher(
@@ -46,6 +53,7 @@ const authSlice = createSlice({
           state.token = payload.access;
           state.isAuthenticated = true;
           state.isLoading = false;
+          state.error = null;
         }
       )
       .addMatcher(
@@ -54,6 +62,7 @@ const authSlice = createSlice({
           state.user = payload;
           state.isAuthenticated = true;
           state.isLoading = false;
+          state.error = null;
         }
       )
       .addMatcher(
@@ -65,11 +74,14 @@ const authSlice = createSlice({
       )
       .addMatcher(
         authApiSlice.endpoints.getCurrentUser.matchRejected,
-        (state) => {
+        (state, { error }) => {
+          localStorage.removeItem('accessToken');
+          localStorage.removeItem('refreshToken');
           state.user = null;
           state.token = null;
           state.isAuthenticated = false;
           state.isLoading = false;
+          state.error = error.data;
         }
       );
   },

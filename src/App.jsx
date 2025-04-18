@@ -1,7 +1,4 @@
-// App.js
-
 import React from 'react';
-import { useDispatch } from 'react-redux';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Provider } from 'react-redux';
 import { store } from './app/store';
@@ -29,8 +26,6 @@ import PaymentStatusPage from './pages/Payments/PaymentStatusPage';
 
 // Components
 import ProtectedRoute from './components/auth/ProtectedRoute';
-import { useGetCurrentUserQuery } from './features/auth/authApiSlice';
-import { setCredentials } from './features/auth/authSlice';
 
 const theme = createTheme({
   palette: {
@@ -41,28 +36,17 @@ const theme = createTheme({
       main: '#dc004e',
     },
   },
+  components: {
+    MuiCircularProgress: {
+      styleOverrides: {
+        root: {
+          color: '#1976d2',
+        },
+      },
+    },
+  },
 });
-
-function AuthWrapper({ children }) {
-  const { data: user, isLoading, isSuccess } = useGetCurrentUserQuery();
-  const dispatch = useDispatch();
-
-  React.useEffect(() => {
-    if (isSuccess && user) {
-      dispatch(setCredentials(user));
-    }
-  }, [isSuccess, user, dispatch]);
-
-  if (isLoading) {
-    return <div>Loading...</div>;
-  }
-
-  return children;
-}
-
-
-
-
+// Remove the ProtectedRoute import and usage
 function App() {
   return (
     <Provider store={store}>
@@ -70,34 +54,31 @@ function App() {
         <CssBaseline />
         <SnackbarProvider maxSnack={3}>
           <BrowserRouter>
-            <AuthWrapper>
-              <Routes>
-                {/* Public Routes */}
-                <Route path="/" element={<HomePage />} />
-                <Route path="/login" element={<LoginPage />} />
-                <Route path="/register" element={<RegisterPage />} />
-                <Route path="/products" element={<ProductGrid />} />
-                <Route path="/products/:id" element={<ProductDetailPage />} />
-
-                {/* Protected Routes */}
-                <Route element={<ProtectedRoute />}>
-                  <Route path="/dashboard" element={<DashboardPage />} />
-                  <Route path="/products/create" element={<ProductCreatePage />} />
-                  <Route path="/products/edit/:id" element={<ProductEditPage />} />
-                  <Route path="/payment/:productId" element={<PaymentPage />} />
-                  <Route path="/payment-status/:paymentId" element={<PaymentStatusPage />} />
-                </Route>
-
-                {/* Redirects */}
-                <Route path="/home" element={<Navigate to="/" replace />} />
-                <Route path="/marketplace" element={<Navigate to="/products" replace />} />
-              </Routes>
-            </AuthWrapper>
+            <Routes>
+              {/* Public Routes */}
+              <Route path="/" element={<HomePage />} />
+              <Route path="/login" element={<LoginPage />} />
+              <Route path="/register" element={<RegisterPage />} />
+              <Route path="/products" element={<ProductGrid />} />
+              <Route path="/products/:id" element={<ProductDetailPage />} />
+              
+              {/* These routes will handle their own auth checks */}
+              <Route path="/dashboard" element={<DashboardPage />} />
+              <Route path="/products/create" element={<ProductCreatePage />} />
+              <Route path="/products/edit/:id" element={<ProductEditPage />} />
+              <Route path="/payment/:productId" element={<PaymentPage />} />
+              <Route path="/payment-status/:paymentId" element={<PaymentStatusPage />} />
+              
+              {/* Redirects */}
+              <Route path="/home" element={<Navigate to="/" replace />} />
+              <Route path="/marketplace" element={<Navigate to="/products" replace />} />
+            </Routes>
           </BrowserRouter>
         </SnackbarProvider>
       </ThemeProvider>
     </Provider>
   );
 }
+
 
 export default App;
