@@ -42,13 +42,34 @@ const ProductForm = ({ initialValues, onSubmit, isEditing, isLoading }) => {
   const { data: categories = [], isLoading: loadingCategories } = useGetCategoriesQuery();
   const { data: brands = [], isLoading: loadingBrands } = useGetBrandsQuery();
 
+  const productLineSchema = Yup.object().shape({
+    price: Yup.number()
+      .required('Price is required')
+      .min(0.01, 'Price must be at least 0.01'),
+    sku: Yup.string().required('SKU is required'),
+    stock_qty: Yup.number()
+      .required('Stock quantity is required')
+      .min(0, 'Stock cannot be negative'),
+    images: Yup.array()
+      .min(1, 'At least one image is required')
+      .test(
+        'has-primary',
+        'One image must be marked as primary',
+        (images) => images.some(img => img.is_primary)
+      )
+  });
+  
   const validationSchema = Yup.object({
     name: Yup.string().required('Product name is required'),
     description: Yup.string().required('Description is required'),
     type: Yup.string().required('Product type is required'),
     brand: Yup.string().required('Brand is required'),
     category: Yup.string().required('Category is required'),
+    product_lines: Yup.array()
+      .of(productLineSchema)
+      .min(1, 'At least one product variant is required')
   });
+
 
   const formik = useFormik({
     initialValues: initialValues || {
@@ -100,16 +121,17 @@ const ProductForm = ({ initialValues, onSubmit, isEditing, isLoading }) => {
 
   const handleImageUpload = (lineIndex, files) => {
     const newLines = [...productLines];
-    const uploadedImages = Array.from(files).map(file => ({
+    const uploadedImages = Array.from(files).map((file, index) => ({
       image: file,
       alt_text: file.name,
-      is_primary: newLines[lineIndex].images.length === 0,
-      order: newLines[lineIndex].images.length
+      is_primary: newLines[lineIndex].images.length === 0 && index === 0,
+      order: newLines[lineIndex].images.length + index
     }));
     
     newLines[lineIndex].images = [...newLines[lineIndex].images, ...uploadedImages];
     setProductLines(newLines);
   };
+
 
   const handleSetPrimaryImage = (lineIndex, imageIndex) => {
     const newLines = [...productLines];

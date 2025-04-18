@@ -9,41 +9,37 @@ const ProductCreatePage = () => {
   const navigate = useNavigate();
   const { enqueueSnackbar } = useSnackbar();
   const [createProduct, { isLoading }] = useCreateProductMutation();
+ 
+ 
   const handleSubmit = async (values) => {
     try {
-      // Convert to format backend expects
-      const productData = {
-        name: values.name,
-        description: values.description,
-        type: values.type,
-        brand: values.brand,
-        category: values.category,
-        is_featured: values.is_featured,
-        product_lines: values.product_lines.map(line => ({
-          price: line.price,
-          sale_price: line.sale_price || null,
-          sku: line.sku,
-          stock_qty: line.stock_qty,
-          is_active: line.is_active,
-          images: line.images.map(img => ({
-            image: img.image, // This should be a File object
-            alt_text: img.alt_text,
-            is_primary: img.is_primary,
-            order: img.order
-          }))
-        }))
-      };
-  
-      // Use FormData only if you have file uploads
       const formData = new FormData();
-      formData.append('data', JSON.stringify(productData));
       
-      // Append files separately if needed
+      // Append main product fields
+      formData.append('name', values.name);
+      formData.append('description', values.description);
+      formData.append('type', values.type);
+      formData.append('brand', values.brand);
+      formData.append('category', values.category);
+      formData.append('is_featured', values.is_featured);
+  
+      // Append product lines
       values.product_lines.forEach((line, lineIndex) => {
-        line.images.forEach((image, imageIndex) => {
-          if (image.image instanceof File) {
-            formData.append(`image_${lineIndex}_${imageIndex}`, image.image);
-          }
+        formData.append(`product_lines[${lineIndex}][sku]`, line.sku);
+        formData.append(`product_lines[${lineIndex}][price]`, line.price);
+        formData.append(`product_lines[${lineIndex}][stock_qty]`, line.stock_qty);
+        formData.append(`product_lines[${lineIndex}][is_active]`, line.is_active);
+        
+        // Append attribute values
+        line.attribute_values.forEach((av, avIndex) => {
+          formData.append(`product_lines[${lineIndex}][attribute_values][${avIndex}]`, av.id);
+        });
+        
+        // Append images
+        line.images.forEach((img, imgIndex) => {
+          formData.append(`product_lines[${lineIndex}][images][${imgIndex}][image]`, img.image);
+          formData.append(`product_lines[${lineIndex}][images][${imgIndex}][is_primary]`, img.is_primary);
+          formData.append(`product_lines[${lineIndex}][images][${imgIndex}][order]`, img.order);
         });
       });
   
